@@ -23,6 +23,8 @@ kv_path = './kv/'
 for kv in listdir(kv_path):
     Builder.load_file(kv_path+kv)
 
+#THIS IS THE BUTTON PROGRESSION FILE.  YAY!
+
 PLAY_LIST = ['miniScript.txt', 'smallerScript.txt','TEST','TEST','TEST','TEST','Test']
 
 class Play(Button):
