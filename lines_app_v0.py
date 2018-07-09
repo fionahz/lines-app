@@ -67,8 +67,11 @@ class Container(GridLayout):
             print("Line Num is " + str(self.lineNum))
             if self.lineNum == 0:
                 print('BEGINNING WAS ENTERED')
-                self.display.text = 'You are at the beginning of the script.\nIf you have the first line, speak now.' 
-                if not self.charList[0] == self.userChar: 
+                self.display.text = 'You are at the beginning of the script.\nIf you have the first line, speak now.'
+                if self.charList[0] == self.userChar: 
+                    self.lineNum += 1
+                    return
+                else: 
                     self.charLineNum = -1
             if self.cuesMode: 
                 if self.lineNum < (len(self.lineList) - 1):
