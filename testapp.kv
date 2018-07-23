@@ -1,0 +1,102 @@
+#:kivy 1.10.1
+
+#:import Window kivy.core.window.Window
+
+# Screen with list of scripts to select from
+<MenuScreen>:
+    BoxLayout:
+        id: menu_container
+        orientation: "vertical" 
+
+        BoxLayout:
+            size_hint: (None, None)
+            size: (Window.width, 0.2*Window.height)
+            orientation: 'vertical'
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint: (1, None)
+                height: 0.1*Window.height
+                Button:
+                    text: 'I'
+                    background_color: [1, 0, 0, 1]
+                Button:
+                    disabled: True
+                    text: 'L I N E !'
+                Button:
+                    text: 'Settings'
+                    background_color: [1, 0, 0, 1]
+            Label:
+                text: 'Click the play you want to rehearse!'
+
+        ScrollView:
+            id: scrollBox
+            GridLayout:
+                id: playMenu
+                cols: 1
+                size_hint: (None, None)
+                width: Window.width
+
+# Screen with main functionality 
+<RehearseScreen>:
+    BoxLayout:
+        id: rehearse_container
+        orientation: "vertical"
+
+        GridLayout:
+            cols: 3
+            rows: 2
+            row_default_height: 0.1*Window.height
+            padding_bottom: 10
+            Button:
+                id: scriptMenuButton
+                text: 'Script Menu'
+                on_press: root.manager.current = "menu"
+                height: 0.1*Window.height
+            Button:
+                disabled: True
+                text: 'L I N E !'
+            Button:
+                text: 'Settings'
+                background_color: [1, 0, 0, 1]
+            Button:
+                id: charButton
+                on_release: charMenu.open(self)
+                size_hint: (None, None)
+                size: ((1/3)*Window.width, 0.05*Window.height)
+                text: 'Character'
+                DropDown:
+                    id: charMenu
+                    size_hint: (None, None) 
+            Button:
+                size_hint: (None, None)
+                size: ((1/3)*Window.width, 0.05*Window.height)
+                text: 'Act #, Scene #' 
+                background_color: [1, 0, 0, 1]
+                DropDown:
+                    id: actSceneMenu
+                    size_hint: (None, None)
+            TextInput:
+                id: lineNum
+                size_hint: (None, None)
+                size: ((1/3)*Window.width, 0.05*Window.height)
+                hint_text: 'Line #'
+                multiline: False
+                background_color: [1, 0, 0, 1]
+                
+        FloatLayout:
+            size_hint: (None, None)
+            size: (0.9*Window.width, 0.8*Window.height)
+            Button:
+                id: lineButton
+                text: 'Start Rehearsing!'
+                size_hint: (None, None)
+                size: (root.width, 0.8*root.height)
+                pos_hint: {'top': 1}
+            Button:
+                text: 'Prompt Me!' 
+                size_hint: (None, None)
+                size: (root.width, 0.1*root.height)
+                background_color: [1, 0, 0, 1]
+
+
+        
