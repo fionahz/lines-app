@@ -1,5 +1,9 @@
 import kivy
-kivy.require('1.11.0') # replace with your current kivy version !
+kivy.require('1.10.1') # replace with your current kivy version !
+
+#  This is an earlier version of my LINE! app.  This contains some
+#  logic that I have yet to incorporate into my working prototype
+#  which is in 'testApp.py', but it is ultimately going to be deleted
 
 from kivy.app import App
 from kivy.lang import Builder
@@ -22,7 +26,7 @@ kv_path = './kv/'
 for kv in listdir(kv_path):
     Builder.load_file(kv_path+kv)
 
-#THIS IS THE BUTTON PROGRESSION FILE.  YAY!
+#Constant with plays
 
 PLAY_LIST = ['miniScript.txt', 'smallerScript.txt','TEST','TEST','TEST','TEST','Test']
 
@@ -54,7 +58,7 @@ class Container(GridLayout):
 
     def play(self):
 
-
+        print('Play button pressed')
         Prompt.disabled = False
 
         def readLine():
@@ -142,6 +146,8 @@ class Container(GridLayout):
 
     def load(self):
 
+        print('load Button pressed')
+
         self.charList.clear() 
         
         fileObject = open(self.playName)
@@ -159,13 +165,10 @@ class Container(GridLayout):
             if character not in cast:
                 btn = Button(text=character, size_hint_y=None, height=44)
 
-                # for each button, attach a callback that will call the select() method
-                # on the dropdown. We'll pass the text of the button as the data of the
-                # selection.
                 btn.bind(on_release=lambda btn: self.charmenu.select(btn.text))
 
-                # then add the button inside the dropdown
                 self.charmenu.add_widget(btn)
+                print('Add_Widget works here')
                 cast.append(character)
             
         mainbutton = Button(text='Select Your Character', size_hint=(0.4, 0.1), pos_hint={ 'top' : 0.95, 'right' : 0.85})
@@ -176,16 +179,10 @@ class Container(GridLayout):
                 setattr(mainbutton, 'text', 'Select Your Character')
             self.userChar = selection
 
-        # show the dropdown menu when the main button is released
-        # note: all the bind() calls pass the instance of the caller (here, the
-        # mainbutton instance) as the first argument of the callback (here,
-        # dropdown.open.).
-        #mainbutton.bind(on_press=showMenu)
+        
         mainbutton.bind(on_press=lambda x:setUserChar(''))
         mainbutton.bind(on_release=self.charmenu.open)
 
-        # one last thing, listen for the selection in the dropdown list and
-        # assign the data to the button text.
         self.charmenu.bind(on_select=lambda instance, x:setUserChar(x))
         
         runTouchApp(mainbutton)

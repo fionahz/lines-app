@@ -48,6 +48,7 @@
             row_default_height: 0.1*Window.height
             padding_bottom: 10
             Button:
+                id: scriptMenuButton
                 text: 'Script Menu'
                 on_press: root.manager.current = "menu"
                 height: 0.1*Window.height
@@ -80,17 +81,17 @@
                 size: ((1/3)*Window.width, 0.05*Window.height)
                 hint_text: 'Line #'
                 multiline: False
+                background_color: [1, 0, 0, 1]
                 
-
         FloatLayout:
             size_hint: (None, None)
             size: (0.9*Window.width, 0.8*Window.height)
             Button:
-                text: 'Next Line!'
+                id: lineButton
+                text: 'Start Rehearsing!'
                 size_hint: (None, None)
                 size: (root.width, 0.8*root.height)
                 pos_hint: {'top': 1}
-                background_color: [1, 0, 0, 1]
             Button:
                 text: 'Prompt Me!' 
                 size_hint: (None, None)
