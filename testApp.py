@@ -196,6 +196,7 @@ class TestApp(App):
                 cast.append(character)
         
         charButton = screens.current_screen.ids.charButton 
+        lineButton = screens.current_screen.ids.lineButton
 
         setattr(charButton, 'text', 'Character')
 
@@ -206,6 +207,7 @@ class TestApp(App):
             # Reset so that rehearsal will start from the first line
             self.lineNum = 0
             self.charLineNum = -1
+            lineButton.text = 'Start Rehearsing!'
 
             if selection == '':
                 setattr(charButton, 'text', 'Character')
@@ -250,8 +252,7 @@ class TestApp(App):
             print(scriptMenuButton.text)
 
             lineButton = sm.current_screen.ids.lineButton
-            lineButton.text = 'Start Rehearsing'
-            lineButton.bind(on_release=lambda x:self.nextLine(lineButton))  
+            lineButton.text = 'Start Rehearsing!'
         
         playMenu = sm.current_screen.ids.playMenu
         playMenu.bind(minimum_height=playMenu.setter('height'))
@@ -261,6 +262,10 @@ class TestApp(App):
                 btn.background_color = [1, 0, 0, 1]
             btn.bind(on_release=lambda x:selectPlay(x.text))
             playMenu.add_widget(btn)
+
+        rehearseScreen = sm.screens[1]
+        lineButton = rehearseScreen.ids.lineButton
+        lineButton.bind(on_release=lambda x:self.nextLine(lineButton))  
 
         return sm
     
