@@ -74,7 +74,6 @@ class TestApp(App):
     # permanently set to True
     cuesMode = BooleanProperty(True)
 
-
     # Resets all data for rehearsal so that script will start from the beginning
     def resetData(self):
 
@@ -88,6 +87,24 @@ class TestApp(App):
         # Reset so that rehearsal will start from the first line
         self.lineNum = 0
         self.charLineNum = -1
+
+    
+    def promptMe(self, btn):
+        print('Line Num: ' + str(self.lineNum))
+        print('Character Line: ' + str(self.charLineNum))
+        if self.userChar == '':
+            self.nextLine(btn)
+            return
+        if self.charLineNum == -3:
+            btn.text = 'You\'re at the end of the script!  Click here to return to the beginning!'
+        elif self.charLineNum == -1 or self.lineNum == 0:
+            if self.charList[0] == self.userChar:
+                btn.text = self.lineList[0] + "\nClick to move to next cue."
+                self.charLineNum = 0
+            else:
+                btn.text = 'You don\'t have the first line, so click here to get started!'
+        else:
+            btn.text = self.lineList[self.charLineNum] + "\nClick to move to next cue."
  
     # Speaks the line of the script which the current lineNum indicates,
     # Re-enables the lineButton 
@@ -108,13 +125,6 @@ class TestApp(App):
 
         btn.disabled = True
 
-        # print('Stats: ')                          Used to debug edge cases
-        # print('Character: ' + self.userChar)
-        # print('LineNum: ' + str(self.lineNum))
-        # print('CharLineNum: ' + str(self.charLineNum))
-        # print('Lines: ' + str(self.lineList))
-        # print('Characters: ' + str(self.charList))
-
         if self.userChar == '':
             btn.text = 'Please select a character to rehearse as first!'
 
@@ -126,20 +136,21 @@ class TestApp(App):
 
         else:
 
-            if self.lineNum == 0 and self.charLineNum == -1:
+            if self.lineNum == 0 and (self.charLineNum == -1 or self.charLineNum == -3):
                 btn.text = 'You are at the beginning of this part of the script.' + \
                             '\nIf you have the first line, speak now, otherwise ' + \
                             '\nclick to jump to your first cue.'
+                self.charLineNum = -1
                 if self.charList[0] == self.userChar: 
                     self.lineNum += 1
-                    # btn.disabled = False
-                    # return
+                    btn.disabled = False
+                    return
                 else: 
-                    self.charLineNum = -2
-                    # self.lineNum += 1
-                    # btn.disabled = False
-                btn.disabled = False
-                return
+                    for i in range(len(self.charList)):
+                        if self.charList[i] == self.userChar:
+                            self.charLineNum = i
+                            btn.disabled = False
+                            return
 
             if self.cuesMode: 
                 if self.lineNum < (len(self.lineList) - 1):
@@ -160,7 +171,7 @@ class TestApp(App):
                 else:
                     self.lineNum = 0
                     btn.text = 'You have reached the end of your part of this script.\nClick here to start again!'           
-                    self.charLineNum = -1
+                    self.charLineNum = -3
                     btn.disabled = False
             
             
@@ -266,6 +277,8 @@ class TestApp(App):
         rehearseScreen = sm.screens[1]
         lineButton = rehearseScreen.ids.lineButton
         lineButton.bind(on_release=lambda x:self.nextLine(lineButton))  
+        promptButton = rehearseScreen.ids.promptButton
+        promptButton.bind(on_release=lambda x:self.promptMe(lineButton))
 
         return sm
     
