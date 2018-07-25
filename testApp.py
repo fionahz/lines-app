@@ -11,6 +11,10 @@ from kivy.core.window import Window
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.dropdown import DropDown
+from kivy.uix.label import Label
+from kivy.uix.slider import Slider
+from kivy.uix.switch import Switch
+from kivy.uix.popup import Popup
 from kivy.lang import Builder
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.screenmanager import NoTransition 
@@ -51,6 +55,9 @@ class MenuScreen(Screen):
 class RehearseScreen(Screen):
     pass
 
+# COMMENT THIS.
+class SettingsScreen(Screen):
+    pass
 
 # Contains all functions of the app
 class TestApp(App):
@@ -65,6 +72,8 @@ class TestApp(App):
     
     charList = ListProperty()
     lineList = ListProperty()
+
+    prevScreen = StringProperty()
 
     # cuesMode indicates whether the app should speak all lines but those 
     # of the userChar (when False), or skip through the script and only 
@@ -235,6 +244,7 @@ class TestApp(App):
         sm = ScreenManager()
         sm.add_widget(MenuScreen(name='menu'))
         sm.add_widget(RehearseScreen(name='rehearse'))
+        sm.add_widget(SettingsScreen(name='settings'))
         sm.transition = NoTransition(duration=0)
 
         # Called on_click of a play option by the user.
@@ -279,6 +289,24 @@ class TestApp(App):
         lineButton.bind(on_release=lambda x:self.nextLine(lineButton))  
         promptButton = rehearseScreen.ids.promptButton
         promptButton.bind(on_release=lambda x:self.promptMe(lineButton))
+        
+        
+        # Sets up the Settings Screen
+        def openSettings():
+
+            # Returns user to previous screen from Settings Screen
+            def returnToPrevScreen():
+                sm.current = self.prevScreen
+
+            self.prevScreen = sm.current
+            sm.current = 'settings'
+            sm.current_screen.ids.settingsButton.bind(on_release=lambda x: returnToPrevScreen())
+
+        menuSettingsButton = sm.current_screen.ids.settingsButton
+        rehearseSettingsButton = rehearseScreen.ids.settingsButton
+
+        menuSettingsButton.bind(on_release=lambda x:openSettings())
+        rehearseSettingsButton.bind(on_release=lambda x:openSettings())
 
         return sm
     

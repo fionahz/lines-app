@@ -24,7 +24,7 @@
                     text: 'L I N E !'
                 Button:
                     text: 'Settings'
-                    background_color: [1, 0, 0, 1]
+                    id: settingsButton
             Label:
                 text: 'Click the play you want to rehearse!'
 
@@ -57,7 +57,7 @@
                 text: 'L I N E !'
             Button:
                 text: 'Settings'
-                background_color: [1, 0, 0, 1]
+                id: settingsButton
             Button:
                 id: charButton
                 on_release: charMenu.open(self)
@@ -97,6 +97,50 @@
                 text: 'Prompt Me!' 
                 size_hint: (None, None)
                 size: (root.width, 0.1*root.height)
+
+# Screen to adjust volume, speed, and set cues mode
+<SettingsScreen>:
+    BoxLayout:
+        id: settingsContainer
+        orientation: 'vertical'
+        size_hint: (None, None)
+        size: (Window.width, 0.5*Window.height)
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint: (1, None)
+            height: 0.1*Window.height
+            Button:
+                text: 'I'
+                background_color: [1, 0, 0, 1]
+            Button:
+                disabled: True
+                text: 'L I N E !'
+            Button:
+                text: 'Settings'
+                id: settingsButton
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint: (1, None)
+            height: 0.9*Window.height
+            Label:
+                text: 'Volume'
+            Slider:
+                id: volumeSlider
+                min: 0
+                max: 4
+                value: 1
+            Label:
+                text: 'Speed'
+            Slider:
+                id: speedSlider
+                min: 0
+                max: 4
+                value: 2
+            Label:
+                text: 'Cues Mode'
+            Switch:
+                id: cuesModeSwitch
+                active: True
 
 
         
