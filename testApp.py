@@ -84,7 +84,9 @@ class TestApp(App):
     cuesMode = BooleanProperty(True)
 
     # Resets all data for rehearsal so that script will start from the beginning
-    def resetData(self):
+    def resetData(self, manager):
+
+        self.prevScreen = 'menu'
 
         print('Reset Data was called!')
 
@@ -98,22 +100,25 @@ class TestApp(App):
         self.charLineNum = -1
 
     
-    def promptMe(self, btn):
+    def promptMe(self, manager):
+
+        lineButton = manager.current_screen.ids.lineButton
+
         print('Line Num: ' + str(self.lineNum))
         print('Character Line: ' + str(self.charLineNum))
         if self.userChar == '':
-            self.nextLine(btn)
+            self.nextLine(manager)
             return
         if self.charLineNum == -3:
-            btn.text = 'You\'re at the end of the script!  Click here to return to the beginning!'
+            lineButton.text = 'You\'re at the end of the script!  Click here to return to the beginning!'
         elif self.charLineNum == -1 or self.lineNum == 0:
             if self.charList[0] == self.userChar:
-                btn.text = self.lineList[0] + "\nClick to move to next cue."
+                lineButton.text = self.lineList[0] + "\nClick to move to next cue."
                 self.charLineNum = 0
             else:
-                btn.text = 'You don\'t have the first line, so click here to get started!'
+                lineButton.text = 'You don\'t have the first line, so click here to get started!'
         else:
-            btn.text = self.lineList[self.charLineNum] + "\nClick to move to next cue."
+            lineButton.text = self.lineList[self.charLineNum] + "\nClick to move to next cue."
  
     # Speaks the line of the script which the current lineNum indicates,
     # Re-enables the lineButton 
@@ -130,73 +135,80 @@ class TestApp(App):
     #
     # Disables and re-enables lineButton to prevent simultaneous function calls
     # from causing errors
-    def nextLine(self, btn):
+    def nextLine(self, manager):
 
-        btn.disabled = True
+        lineButton = manager.current_screen.ids.lineButton
+        promptButton = manager.current_screen.ids.promptButton
+        
+        lineButton.disabled = True
+        self.prevScreen = 'rehearse'
 
         if self.userChar == '':
-            btn.text = 'Please select a character to rehearse as first!'
+            lineButton.text = 'Please select a character to rehearse as first!'
 
             # Ensure that selected character will start from the beginning of the script
             self.lineNum = 0
             self.charLineNum = -1
 
-            btn.disabled = False
+            lineButton.disabled = False
 
         else:
 
             if self.lineNum == 0 and (self.charLineNum == -1 or self.charLineNum == -3):
-                btn.text = 'You are at the beginning of this part of the script.' + \
+                lineButton.text = 'You are at the beginning of this part of the script.' + \
                             '\nIf you have the first line, speak now, otherwise ' + \
                             '\nclick to jump to your first cue.'
                 self.charLineNum = -1
                 if self.charList[0] == self.userChar: 
                     self.lineNum += 1
-                    btn.disabled = False
+                    lineButton.disabled = False
                     return
                 else: 
                     for i in range(len(self.charList)):
                         if self.charList[i] == self.userChar:
                             self.charLineNum = i
-                            btn.disabled = False
+                            lineButton.disabled = False
                             return
 
             if self.cuesMode: 
                 if self.lineNum < (len(self.lineList) - 1):
                     if self.charList[self.lineNum  + 1] == self.userChar and (not self.charList[self.lineNum] == self.userChar):
-                        #btn.text = self.lineList[self.lineNum]    This would be used to display the cue-line text
-                        btn.text = 'Next Cue!'
+                        #lineButton.text = self.lineList[self.lineNum]    This would be used to display the cue-line text
+                        lineButton.text = 'Next Cue!'
                         self.charLineNum = self.lineNum + 1
-                        Clock.schedule_once(lambda dt: self.speakLine(btn), 0.2) 
+                        Clock.schedule_once(lambda dt: self.speakLine(lineButton), 0.2) 
                     else:
                         while self.lineNum < (len(self.lineList) - 1):
                             self.lineNum += 1   
                             if self.lineNum == (len(self.lineList) - 1):
-                                self.nextLine(btn)
+                                self.nextLine(manager)
                                 break
                             if self.charList[self.lineNum + 1] == self.userChar:
-                                self.nextLine(btn)
+                                self.nextLine(manager)
                                 break
                 else:
                     self.lineNum = 0
-                    btn.text = 'You have reached the end of your part of this script.\nClick here to start again!'           
+                    lineButton.text = 'You have reached the end of your part of this script.\nClick here to start again!'           
                     self.charLineNum = -3
-                    btn.disabled = False
+                    lineButton.disabled = False
             
             
             # This mode is currently inaccessible 
             else:
                 if self.lineNum < len(self.lineList):
                     if self.charList[self.lineNum] == self.userChar:
-                        btn.text = 'Your  line!'    
+                        promptButton.disabled = False
+                        lineButton.text = 'Your Line!'
+                        self.charLineNum = self.lineNum
+                        self.lineNum += 1
                     else:
-                        #btn.text = self.lineList[self.lineNum]    This would be used to display the cue-line text
-                        btn.text = 'Next Line!'
-                    Clock.schedule_once(lambda dt: self.speakLine(btn), 0.2)
+                        promptButton.disabled = True
+                        lineButton.text = 'Next Line!'
+                        Clock.schedule_once(lambda dt: self.speakLine(lineButton), 0.2)
                 else:
                     self.lineNum = 0
-                    btn.text = 'You have reached the end of this script.\nClick here to start again'
-                    btn.disabled = False
+                    lineButton.text = 'You have reached the end of this script.\nClick here to start again'
+                lineButton.disabled = False
 
     # Function to build character selection menu for Rehearse Screen
     # Clears current rehearsal data and populates dropdown.  
@@ -237,6 +249,12 @@ class TestApp(App):
 
         charMenu.bind(on_select=lambda instance, x:setUserChar(x))
 
+    # Returns user to previous screen from Settings Screen
+    def returnToPrevScreen(self, manager):
+        cuesModeSwitch = manager.current_screen.ids.cuesModeSwitch
+        self.cuesMode = cuesModeSwitch.active
+        manager.current = self.prevScreen
+
     # Initial function.  Called when the app first loads.
     # Sets up Screen Manager and menu of play options.
     def build(self):
@@ -246,6 +264,8 @@ class TestApp(App):
         sm.add_widget(RehearseScreen(name='rehearse'))
         sm.add_widget(SettingsScreen(name='settings'))
         sm.transition = NoTransition(duration=0)
+
+        sm.screens[2].ids.settingsButton.bind(on_release=lambda x: self.returnToPrevScreen(sm))
 
         # Called on_click of a play option by the user.
         # Loads the lines and character list of the selected play and
@@ -269,11 +289,12 @@ class TestApp(App):
             sm.current_screen.bind(on_enter=lambda x:self.charSelect(sm))
 
             scriptMenuButton = sm.current_screen.ids.scriptMenuButton
-            scriptMenuButton.bind(on_release=lambda x:self.resetData())
+            scriptMenuButton.bind(on_release=lambda x:self.resetData(sm))
             print(scriptMenuButton.text)
 
             lineButton = sm.current_screen.ids.lineButton
             lineButton.text = 'Start Rehearsing!'
+            self.prevScreen = 'rehearse'
         
         playMenu = sm.current_screen.ids.playMenu
         playMenu.bind(minimum_height=playMenu.setter('height'))
@@ -286,21 +307,15 @@ class TestApp(App):
 
         rehearseScreen = sm.screens[1]
         lineButton = rehearseScreen.ids.lineButton
-        lineButton.bind(on_release=lambda x:self.nextLine(lineButton))  
+        lineButton.bind(on_release=lambda x:self.nextLine(sm))  
         promptButton = rehearseScreen.ids.promptButton
-        promptButton.bind(on_release=lambda x:self.promptMe(lineButton))
-        
-        
+        promptButton.bind(on_release=lambda x:self.promptMe(sm))
+       
         # Sets up the Settings Screen
         def openSettings():
 
-            # Returns user to previous screen from Settings Screen
-            def returnToPrevScreen():
-                sm.current = self.prevScreen
-
             self.prevScreen = sm.current
             sm.current = 'settings'
-            sm.current_screen.ids.settingsButton.bind(on_release=lambda x: returnToPrevScreen())
 
         menuSettingsButton = sm.current_screen.ids.settingsButton
         rehearseSettingsButton = rehearseScreen.ids.settingsButton
