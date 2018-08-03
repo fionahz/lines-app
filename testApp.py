@@ -99,7 +99,6 @@ class TestApp(App):
         self.lineNum = 0
         self.charLineNum = -1
 
-    
     def promptMe(self, manager):
 
         lineButton = manager.current_screen.ids.lineButton
@@ -117,17 +116,28 @@ class TestApp(App):
                 self.charLineNum = 0
             else:
                 lineButton.text = 'You don\'t have the first line, so click here to get started!'
+                self.charLineNum = -2
         else:
             lineButton.text = self.lineList[self.charLineNum] + "\nClick to move to next cue."
  
     # Speaks the line of the script which the current lineNum indicates,
     # Re-enables the lineButton 
-    def speakLine(self, btn):
-            if not (self.charList[self.lineNum] == self.userChar):
-                lineForSpeak = self.lineList[self.lineNum].replace("\'", "\\\'")
-                os.system("say -v Alex" + lineForSpeak)
-            self.lineNum += 1
-            btn.disabled = False
+    def speakLine(self, manager):
+        lineButton = manager.current_screen.ids.lineButton
+        promptMe = manager.current_screen.ids.promptButton
+        lineButton.disabled = True
+        # if not self.cuesMode:
+        #     self.nextLine(manager)
+        if not (self.charList[self.lineNum] == self.userChar):
+            lineForSpeak = self.lineList[self.lineNum].replace("\'", "\\\'")
+            os.system("say -v Alex" + lineForSpeak)    
+        self.lineNum += 1
+        if not self.cuesMode and self.lineNum < len(self.lineList):
+            if self.charList[self.lineNum] == self.userChar:
+                self.lineNum += 1
+                lineButton.text = 'Your Line!'
+                promptMe.disabled = False
+        lineButton.disabled = False
 
     # Function called by the main button (lineButton) on the Rehearse Screen
     #
@@ -155,9 +165,13 @@ class TestApp(App):
         else:
 
             if self.lineNum == 0 and (self.charLineNum == -1 or self.charLineNum == -3):
+                cueOrLine = '\nclick to start rehearsing.'
+                if self.cuesMode:
+                    cueOrLine = '\nclick to jump to your first line.'
                 lineButton.text = 'You are at the beginning of this part of the script.' + \
                             '\nIf you have the first line, speak now, otherwise ' + \
-                            '\nclick to jump to your first cue.'
+                            cueOrLine
+                promptButton.disabled = False
                 self.charLineNum = -1
                 if self.charList[0] == self.userChar: 
                     self.lineNum += 1
@@ -176,7 +190,7 @@ class TestApp(App):
                         #lineButton.text = self.lineList[self.lineNum]    This would be used to display the cue-line text
                         lineButton.text = 'Next Cue!'
                         self.charLineNum = self.lineNum + 1
-                        Clock.schedule_once(lambda dt: self.speakLine(lineButton), 0.2) 
+                        Clock.schedule_once(lambda dt: self.speakLine(manager), 0.2) 
                     else:
                         while self.lineNum < (len(self.lineList) - 1):
                             self.lineNum += 1   
@@ -193,21 +207,21 @@ class TestApp(App):
                     lineButton.disabled = False
             
             
-            # This mode is currently inaccessible 
             else:
                 if self.lineNum < len(self.lineList):
                     if self.charList[self.lineNum] == self.userChar:
                         promptButton.disabled = False
-                        lineButton.text = 'Your Line!'
+                        #lineButton.text = 'Your Line!'
                         self.charLineNum = self.lineNum
                         self.lineNum += 1
                     else:
                         promptButton.disabled = True
                         lineButton.text = 'Next Line!'
-                        Clock.schedule_once(lambda dt: self.speakLine(lineButton), 0.2)
+                        Clock.schedule_once(lambda dt: self.speakLine(manager), 0.2)
                 else:
                     self.lineNum = 0
                     lineButton.text = 'You have reached the end of this script.\nClick here to start again'
+                    self.charLineNum = -3
                 lineButton.disabled = False
 
     # Function to build character selection menu for Rehearse Screen
