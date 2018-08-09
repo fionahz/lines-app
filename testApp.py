@@ -5,7 +5,7 @@ kivy.require('1.10.1')
 
 from kivy.app import App
 from kivy.properties import ObjectProperty, NumericProperty, StringProperty, \
-ListProperty, BooleanProperty
+ListProperty, BooleanProperty, DictProperty
 from kivy.uix.button import Button
 from kivy.core.window import Window
 from kivy.uix.gridlayout import GridLayout
@@ -21,14 +21,15 @@ from kivy.uix.screenmanager import NoTransition
 from kivy.clock import Clock, mainthread
 
 import os
+import re
 
 # Global Constant with all properly formatted scripts
 #
 # At this stage of development, contains test strings 
 # to demonstrate the scrolling capability of the menu
 # screen.
-PLAY_LIST = ['Mini Script', 'Smaller Script','Test Button - Do Not Click', \
-'Test Button - Do Not Click','Test Button - Do Not Click', \
+PLAY_LIST = ['Mini Script', 'Smaller Script','Romeo and Juliet', \
+'Much Ado About Nothing','Test Button - Do Not Click', \
 'Test Button - Do Not Click','Test Button - Do Not Click', \
 'Test Button - Do Not Click','Test Button - Do Not Click', \
 'Test Button - Do Not Click','Test Button - Do Not Click', \
@@ -73,6 +74,16 @@ class TestApp(App):
     charList = ListProperty()
     lineList = ListProperty()
 
+    fullCharList = ListProperty()
+    fullLineList = ListProperty()
+
+    scenesList = ListProperty()
+    sceneLinesList = ListProperty()
+    sceneCharsList = ListProperty()
+
+    sceneLinesDict = DictProperty()
+    sceneCharsDict = DictProperty()
+
     prevScreen = StringProperty()
 
     # cuesMode indicates whether the app should speak all lines but those 
@@ -94,6 +105,13 @@ class TestApp(App):
 
         self.lineList = []
         self.charList = []
+        self.scenesList = []
+
+        self.sceneLinesList = []
+        self.sceneCharsList = []
+
+        self.sceneLinesDict = {}
+        self.sceneCharsDict = {}
         
         # Reset so that rehearsal will start from the first line
         self.lineNum = 0
@@ -130,6 +148,8 @@ class TestApp(App):
         #     self.nextLine(manager)
         if not (self.charList[self.lineNum] == self.userChar):
             lineForSpeak = self.lineList[self.lineNum].replace("\'", "\\\'")
+            lineForSpeak = lineForSpeak.replace(";", "\;")
+            lineForSpeak = lineForSpeak.replace("\n", " ")
             os.system("say -v Alex" + lineForSpeak)    
         self.lineNum += 1
         if not self.cuesMode and self.lineNum < len(self.lineList):
@@ -229,10 +249,13 @@ class TestApp(App):
     def charSelect(self, screens):
         
         charMenu = screens.current_screen.ids.charMenu
+        actSceneMenu = screens.current_screen.ids.actSceneMenu
+
         charMenu.clear_widgets()
+        actSceneMenu.clear_widgets()
         cast = []
 
-        for character in self.charList:
+        for character in self.fullCharList:
             if character not in cast:
                 btn = Button(text=character, size_hint_y=None, height=44)
 
@@ -240,11 +263,36 @@ class TestApp(App):
 
                 charMenu.add_widget(btn)
                 cast.append(character)
+
+        for scene in self.scenesList:
+            btn = Button(text=scene, size_hint_y=None, height=44)
+
+            btn.bind(on_release=lambda btn: actSceneMenu.select(btn.text))
+
+            actSceneMenu.add_widget(btn)
         
         charButton = screens.current_screen.ids.charButton 
+        actSceneButton = screens.current_screen.ids.actSceneButton
         lineButton = screens.current_screen.ids.lineButton
 
         setattr(charButton, 'text', 'Character')
+
+        setattr(actSceneButton, 'text', 'Act #, Scene #')
+
+
+        def setActScene(selection):
+            setattr(actSceneButton, 'text', selection)
+    
+            # Reset so that rehearsal will start from the first line
+            self.lineNum = 0
+            self.charLineNum = -1
+            lineButton.text = 'Start Rehearsing!'
+
+            if selection == '':
+                setattr(actSceneButton, 'text', 'Act #, Scene #')
+            else:
+                self.lineList = self.sceneLinesDict[selection]
+                self.charList = self.sceneCharsDict[selection]
 
         # Function called on_click of the character selection dropdown menu
         def setUserChar(selection):
@@ -260,8 +308,10 @@ class TestApp(App):
             self.userChar = selection
 
         charButton.bind(on_press=lambda x:setUserChar(''))
+        actSceneButton.bind(on_press=lambda x:setActScene(''))
 
         charMenu.bind(on_select=lambda instance, x:setUserChar(x))
+        actSceneMenu.bind(on_select=lambda instance, x:setActScene(x))
 
     # Returns user to previous screen from Settings Screen
     def returnToPrevScreen(self, manager):
@@ -292,21 +342,91 @@ class TestApp(App):
 
             fileObject = open(self.playName)
             
+            # for line in fileObject: 
+                
+            #     #Load to dict and keep line count for each character.  
+            #     #lineArray = line.split(":") 
+
+            #     if line == '':
+            #         currentString = ''
+            #     elif (not ' ' in line) and (not 'ACT' in line) and (not 'SCENE' in line):
+            #         self.charList.append(line[:-1])
+            #         print(self.charList)
+            #     else:
+            #         currentString = currentString + ' ' + line
+            #         print(currentString)
+
+            currentString = ''
+            currentSceneLines = []
+            currentSceneChars = []
+            currentAct = ''
+            prevLineChar = False
+
             for line in fileObject: 
                 
                 #Load to dict and keep line count for each character.  
-                lineArray = line.split(":") 
-                if len(lineArray) > 1:
-                    self.charList.append(lineArray[0])
-                    self.lineList.append(lineArray[1])
+                #lineArray = line.split(":") 
+                #print('LINE: ' + line)
 
-            sm.current_screen.bind(on_enter=lambda x:self.charSelect(sm))
+                if not re.search('[a-zA-Z]', line):
+                    if not currentString == '':
+                        #print(currentString)
+                        self.lineList.append(currentString)
+                        currentSceneLines.append(currentString)
+                    prevLineChar = False
+                    #print(lineList)
+                    currentString = ''
+                elif ('ACT' in line) or ('PROLOGUE' in line):
+                    currentAct = line
+                    currentAct = currentAct.replace("\n", "")
+                    if ('PROLOGUE' in line):
+                        self.scenesList.append(currentAct)
+                    print(currentAct)
+                elif ('SCENE' in line):
+                    sceneAndDescription = line.split('.')
+                    scene = sceneAndDescription[0]
+                    self.scenesList.append(currentAct + ', ' + scene)
+                    if not currentSceneChars == []:
+                        self.sceneCharsList.append(currentSceneChars)
+                        self.sceneLinesList.append(currentSceneLines)
+                    currentSceneChars = []
+                    currentSceneLines = []
+                elif (not 'ACT' in line) and (not 'SCENE' in line) and ('.' in line) and (not re.search('[a-z]',line)):
+                    self.charList.append(line[:-1])
+                    currentSceneChars.append(line[:-1])
+                    #print(charList)
+                    prevLineChar = True
+                    #print('Character = ' + line[:-1]) 
+                elif prevLineChar:
+                    currentString = currentString + ' ' + line
+                    #print(currentString)
+                else:
+                    pass
+            
+            self.sceneLinesList.append(currentSceneLines)
+            self.sceneCharsList.append(currentSceneChars)
+            self.fullLineList = self.lineList
+            self.fullCharList = self.charList
+
+            # print (self.sceneLinesList)
+            # print (self.sceneCharsList)
+            print (self.scenesList)
+
+            for i in range(len(self.scenesList)):
+                self.sceneLinesDict[self.scenesList[i]] = self.sceneLinesList[i]
+                self.sceneCharsDict[self.scenesList[i]] = self.sceneCharsList[i]
+
+            print(self.sceneCharsDict)
+            print(self.sceneLinesDict)
+            print("Current Screen for reference: " + sm.current)
+            #sm.current_screen.bind(on_enter=lambda x:self.charSelect(sm))
 
             scriptMenuButton = sm.current_screen.ids.scriptMenuButton
             scriptMenuButton.bind(on_release=lambda x:self.resetData(sm))
             print(scriptMenuButton.text)
 
             lineButton = sm.current_screen.ids.lineButton
+            #lineButtonLayout = sm.current_screen.ids.lineButtonLayout
             lineButton.text = 'Start Rehearsing!'
             self.prevScreen = 'rehearse'
         
@@ -321,9 +441,16 @@ class TestApp(App):
 
         rehearseScreen = sm.screens[1]
         lineButton = rehearseScreen.ids.lineButton
+        lineButton.height = lineButton.minimum_height
+        print('Height should be: ' + str(lineButton.minimum_height))
+        print('Height: ' + str(lineButton.height))
+        #lineButtonLayout = rehearseScreen.ids.lineButtonLayout
+        #lineButtonLayout.bind(minimum_height=lineButtonLayout.setter('height'))
         lineButton.bind(on_release=lambda x:self.nextLine(sm))  
         promptButton = rehearseScreen.ids.promptButton
         promptButton.bind(on_release=lambda x:self.promptMe(sm))
+
+        rehearseScreen.bind(on_enter=lambda x:self.charSelect(sm))
        
         # Sets up the Settings Screen
         def openSettings():
