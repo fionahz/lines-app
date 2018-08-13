@@ -40,8 +40,9 @@
 <RehearseScreen>:
     charMenu: charMenu.__self__
     actSceneMenu: actSceneMenu.__self__
+    buttonContainer: buttonContainer.__self__
     BoxLayout:
-        id: rehearse_container
+        id: totalContainer
         orientation: "vertical"
 
         GridLayout:
@@ -86,33 +87,40 @@
                 hint_text: 'Line #'
                 multiline: False
                 background_color: [1, 0, 0, 1]
-                
+
         BoxLayout:
-            orientation: 'vertical'
+            id: rehearseContainer
+            orientation: 'vertical'  
             size_hint: (None, None)
-            size: (Window.width, 0.8*Window.height)
-            ScrollView:
-                id: lineButtonScroll
+            size: (Window.width, 0.8*Window.height)      
+            BoxLayout:
+                id: buttonContainer
+                orientation: 'vertical'
                 size_hint: (None, None)
-                size: (Window.width, 0.7*Window.height)
-                # FloatLayout:
-                #     id: lineButtonLayout
-                #     #cols: 1
-                #     size_hint: (None, None)
-                #     size: (Window.width, 0.7*Window.height)
-                Button:
-                    id: lineButton
-                    text: 'Start Rehearsing!'
+                size: (Window.width, 0.8*Window.height)
+                pos_hint: {'top': 0.8}
+                ScrollView:
+                    id: lineButtonScroll
                     size_hint: (None, None)
-                    minimum_height: 0.7*Window.height
-                    height: self.texture_size[1]
-                    width: Window.width
-                    #pos_hint: {'top': 1}
-            Button:
-                id: promptButton
-                text: 'Prompt Me!' 
-                size_hint: (None, None)
-                size: (root.width, 0.1*root.height)
+                    size: (Window.width, 0.7*Window.height)
+                    # FloatLayout:
+                    #     id: lineButtonLayout
+                    #     #cols: 1
+                    #     size_hint: (None, None)
+                    #     size: (Window.width, 0.7*Window.height)
+                    Button:
+                        id: lineButton
+                        text: 'Start Rehearsing!'
+                        size_hint: (None, None)
+                        minimum_height: 0.7*Window.height
+                        height: self.texture_size[1]
+                        width: Window.width
+                        #pos_hint: {'top': 1}
+                Button:
+                    id: promptButton
+                    text: 'Prompt Me!' 
+                    size_hint: (None, None)
+                    size: (root.width, 0.1*root.height)
 
 # Screen to adjust volume, speed, and set cues mode
 <SettingsScreen>:
@@ -158,5 +166,29 @@
                 id: cuesModeSwitch
                 active: True
 
+
+<NextSceneLayout>:
+    orientation: 'vertical'
+    size_hint: (None, None)
+    size:  (Window.width, 0.8*Window.height)
+    Label:
+        id: nextSceneLabel
+        valign: 'middle'
+        text: "You\'ve reached the end of your part for this scene."
+    BoxLayout:
+        id: nextSceneButtonLayout
+        orientation: 'horizontal'
+        padding: [0.15*Window.width, 0.1*Window.height, 0.15*Window.width, 0.05*Window.height]
+        spacing: 0.2*Window.width
+        Button:
+            id: repeatSceneButton
+            text: 'Rehearse this scene again.'
+            size_hint: (None, None)
+            size: (0.25*Window.width, 0.1*Window.height)
+        Button:
+            id: nextSceneButton
+            text: 'Rehearse next scene.'
+            size_hint: (None, None)
+            size: (0.25*Window.width, 0.1*Window.height)
 
         
