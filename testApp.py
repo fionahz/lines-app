@@ -25,11 +25,7 @@ import os
 import re
 
 # Global Constant with all properly formatted scripts
-#
-# At this stage of development, contains test strings 
-# to demonstrate the scrolling capability of the menu
-# screen.
-PLAY_LIST = ['Mini Script', 'Smaller Script','Romeo and Juliet', \
+PLAY_LIST = ['Mini Script','Romeo and Juliet', \
 'Much Ado About Nothing','Test Button - Do Not Click', \
 'Test Button - Do Not Click','Test Button - Do Not Click', \
 'Test Button - Do Not Click','Test Button - Do Not Click', \
@@ -44,12 +40,14 @@ PLAY_LIST = ['Mini Script', 'Smaller Script','Romeo and Juliet', \
 'Test Button - Do Not Click','Test Button - Do Not Click', \
 'Test Button - Do Not Click','Test Button - Do Not Click']
 
+# Layout used when use reaches end of current section.
+# Contains buttons to progress to next section or repeat
+# current section.
 class NextSceneLayout(BoxLayout):
     pass
 
-# Entry screen.  Contains list of plays that can be rehearsed,
-# Settings button, and Information Button (Neither are currently
-# functional)
+# Entry screen. Contains list of plays that can be rehearsed,
+# Settings button, and Information Button 
 class MenuScreen(Screen):
     pass
 
@@ -60,51 +58,70 @@ class MenuScreen(Screen):
 class RehearseScreen(Screen):
     pass
 
-# COMMENT THIS.
+# Contains control for volume and speed of speech, and cues mode.
 class SettingsScreen(Screen):
     pass
+
 
 # Contains all functions of the app
 class TestApp(App):
 
     # Set default attributes for the normal function of the application
 
+    # Character currently being rehearsed by user
     userChar = StringProperty()
-    playName = StringProperty('None Selected')
+    # Script currently being rehearsed by user
+    playName = StringProperty()
     
+    # Track user's progress through script
     lineNum = NumericProperty()
     charLineNum = NumericProperty()
     
+    # Current attributes for section of script being rehearsed
     charList = ListProperty()
     lineList = ListProperty()
 
+    # All speakers in the script, in order
     fullCharList = ListProperty()
+    # All lines in the script, in order
     fullLineList = ListProperty()
 
+    # List of strings, of the form Act #, Scene #
     scenesList = ListProperty()
+    # Current scene being rehearsed
     currentScene = StringProperty()
+    # 2D array of all lines, in order, organized by scene
     sceneLinesList = ListProperty()
+    # 2D array of all speakers, in order, organized by scene
     sceneCharsList = ListProperty()
 
+    # scenesList keyed to sceneLinesList
     sceneLinesDict = DictProperty()
+    # scenesList keyed to sceneCharsList
     sceneCharsDict = DictProperty()
 
+    # Stores screen name, used for exiting settings screen
     prevScreen = StringProperty()
 
     # cuesMode indicates whether the app should speak all lines but those 
     # of the userChar (when False), or skip through the script and only 
     # speak lines which are specifically cues for the userChar (when True)
-    # 
-    # At this stage of development, cuesMode is automatically and 
-    # permanently set to True
     cuesMode = BooleanProperty(True)
+    
+    # cutMode indicates whether the app should speak entire lines (when False)
+    # or skip to the last few phrases of each line for faster rehearsal.
+    cutMode = BooleanProperty(False)
+    
+    # Resets indexes to start of current section
+    def jumpToSectionStart(self, manager):
+        self.lineNum = 0
+        self.charLineNum = -1
 
     # Resets all data for rehearsal so that script will start from the beginning
-    def resetData(self, manager):
+    def resetScript(self, manager):
 
+        #TODO: Check this line, not sure why it's here.
         self.prevScreen = 'menu'
-
-        print('Reset Data was called!')
 
         self.userChar = ''
 
@@ -117,17 +134,16 @@ class TestApp(App):
 
         self.sceneLinesDict = {}
         self.sceneCharsDict = {}
+        self.currentScene = ''
         
         # Reset so that rehearsal will start from the first line
-        self.lineNum = 0
-        self.charLineNum = -1
+        self.jumpToSectionStart(manager)
 
+    # Changes lineButton text to the user's current line
     def promptMe(self, manager):
 
         lineButton = manager.current_screen.ids.lineButton
 
-        print('Line Num: ' + str(self.lineNum))
-        print('Character Line: ' + str(self.charLineNum))
         if self.userChar == '':
             self.nextLine(manager)
             return
@@ -143,25 +159,83 @@ class TestApp(App):
         else:
             lineButton.text = self.lineList[self.charLineNum] + "\nClick to move to next cue."
  
-    # Speaks the line of the script which the current lineNum indicates,
-    # Re-enables the lineButton 
+    # Speaks the line of the script which the current lineNum indicates
     def speakLine(self, manager):
+        
         lineButton = manager.current_screen.ids.lineButton
         promptMe = manager.current_screen.ids.promptButton
         lineButton.disabled = True
-        # if not self.cuesMode:
-        #     self.nextLine(manager)
+        
         if not (self.charList[self.lineNum] == self.userChar):
             lineForSpeak = self.lineList[self.lineNum].replace("\'", "\\\'")
             lineForSpeak = lineForSpeak.replace(";", "\;")
-            lineForSpeak = lineForSpeak.replace("\n", " ")
-            os.system("say -v Alex" + lineForSpeak)    
+            if self.cutMode:
+                phrases = lineForSpeak.split("\n")
+                if len(phrases) < 3:
+                    lineForSpeak = " ".join(phrases)
+                else:
+                    lineForSpeak = " ".join(phrases[-3:])
+            else:
+                lineForSpeak = lineForSpeak.replace("\n", " ")
+            print(lineForSpeak)
+            os.system("say -v Alex" + lineForSpeak) 
+               
         self.lineNum += 1
+        
         if not self.cuesMode and self.lineNum < len(self.lineList):
             if self.charList[self.lineNum] == self.userChar:
                 self.lineNum += 1
                 lineButton.text = 'Your Line!'
                 promptMe.disabled = False
+                
+        lineButton.disabled = False
+        
+    #
+    def nextScene(self, manager):
+        
+        lineButton = manager.current_screen.ids.lineButton
+        promptButton = manager.current_screen.ids.promptButton
+        self.lineNum = 0
+
+        indexOfCurrent = self.scenesList.index(self.currentScene)
+        rehearseContainer = manager.current_screen.ids.rehearseContainer
+        buttonContainer = manager.current_screen.ids.buttonContainer
+        rehearseContainer.remove_widget(buttonContainer)
+        nextSceneContainer = NextSceneLayout(id='nextSceneLayout') 
+        nextSceneLabel = nextSceneContainer.ids.nextSceneLabel
+
+        def changeScreen(nsc):
+            print(nsc.ids)
+            nsc.clear_widgets()
+            rehearseContainer.add_widget(buttonContainer)
+
+        nextSceneButton = nextSceneContainer.ids.nextSceneButton
+        repeatSceneButton = nextSceneContainer.ids.repeatSceneButton
+
+        repeatSceneButton.bind(on_release=lambda x:self.setActScene(manager, self.currentScene))
+        repeatSceneButton.bind(on_release=lambda x:changeScreen(nextSceneContainer))
+        
+        if not (self.currentScene == self.scenesList[-1]):
+            nextSceneLabel.text = "You\'ve reached the end of your part for this scene."
+            nextSceneButton.text = 'Rehearse next scene.'
+            
+            repeatSceneButton.text = 'Rehearse this scene again.'
+            nextScene = self.scenesList[indexOfCurrent + 1]
+            nextSceneButton.bind(on_release=lambda x:self.setActScene(manager, nextScene))
+            nextSceneButton.bind(on_release=lambda x:changeScreen(nextSceneContainer))
+        else:
+            #TODO: Make this function.
+            nextSceneLabel.text = 'You have reached the end of your part of the script.\nStart again from beginning, or practice last scene again?'
+            nextSceneButton.text = "Start again from beginning."
+            
+            repeatSceneButton.text = "Practice last scene again."
+
+            nextSceneButton.bind(on_release=lambda x:self.setActScene(manager, self.scenesList[0]))
+            nextSceneButton.bind(on_release=lambda x:changeScreen(nextSceneContainer))
+            
+            self.charLineNum = -3
+
+        rehearseContainer.add_widget(nextSceneContainer)
         lineButton.disabled = False
 
     # Function called by the main button (lineButton) on the Rehearse Screen
@@ -184,9 +258,9 @@ class TestApp(App):
         if self.userChar == '':
             lineButton.text = 'Please select a character to rehearse as first!'
 
-            # Ensure that selected character will start from the beginning of the script
-            self.lineNum = 0
-            self.charLineNum = -1
+            # Ensure that selected character will start from the beginning 
+            # of the current section of the script
+            self.jumpToSectionStart(manager)
 
             lineButton.disabled = False
 
@@ -195,12 +269,14 @@ class TestApp(App):
             if self.lineNum == 0 and (self.charLineNum == -1 or self.charLineNum == -3):
                 cueOrLine = '\nclick to start rehearsing.'
                 if self.cuesMode:
-                    cueOrLine = '\nclick to jump to your first line.'
+                    cueOrLine = '\nclick to jump to your first cue.'
                 lineButton.text = 'You are at the beginning of this part of the script.' + \
                             '\nIf you have the first line, speak now, otherwise ' + \
                             cueOrLine
+                
                 promptButton.disabled = False
                 self.charLineNum = -1
+                
                 if self.charList[0] == self.userChar: 
                     self.lineNum += 1
                     lineButton.disabled = False
@@ -215,7 +291,6 @@ class TestApp(App):
             if self.cuesMode: 
                 if self.lineNum < (len(self.lineList) - 1):
                     if self.charList[self.lineNum  + 1] == self.userChar and (not self.charList[self.lineNum] == self.userChar):
-                        #lineButton.text = self.lineList[self.lineNum]    This would be used to display the cue-line text
                         lineButton.text = 'Next Cue!'
                         self.charLineNum = self.lineNum + 1
                         Clock.schedule_once(lambda dt: self.speakLine(manager), 0.2) 
@@ -229,45 +304,43 @@ class TestApp(App):
                                 self.nextLine(manager)
                                 break
                 else:
-                    self.lineNum = 0
-                    #lineButton.text = 'You have reached the end of your part of this script.\nClick here to start again!'           
-                    if not (self.currentScene == self.scenesList[-1]):
-                        print(self.scenesList[-1])
-                        indexOfCurrent = self.scenesList.index(self.currentScene)
-                        nextScene = self.scenesList[indexOfCurrent + 1]
-                        rehearseContainer = manager.current_screen.ids.rehearseContainer
-                        buttonContainer = manager.current_screen.ids.buttonContainer
-                        rehearseContainer.remove_widget(buttonContainer)
-                        nextSceneContainer = NextSceneLayout(id='nextSceneLayout') 
-
-                        def changeScreen(nsc):
-                            print(nsc.ids)
-                            nsc.clear_widgets()
-                            rehearseContainer.add_widget(buttonContainer)
-
-                        nextSceneButton = nextSceneContainer.ids.nextSceneButton
-                        nextSceneButton.bind(on_release=lambda x:self.setActScene(manager, nextScene))
-                        nextSceneButton.bind(on_release=lambda x:changeScreen(nextSceneContainer))
-                        
-                        repeatSceneButton = nextSceneContainer.ids.repeatSceneButton
-                        repeatSceneButton.bind(on_release=lambda x:self.setActScene(manager, self.currentScene))
-                        repeatSceneButton.bind(on_release=lambda x:changeScreen(nextSceneContainer))
-                        
-                        rehearseContainer.add_widget(nextSceneContainer)
-                        print(manager.current_screen.ids)
-                        # repeatSceneButton = manager.current_screen.ids.repeatSceneButton
-                        # nextSceneButton.bind(on_release=lambda x:self.setActScene(manager, nextScene))
-                        # lineButton.text = 'You have reached the end of your part in this section of the script.\nProceed to next act or practice this one again?'
-                    else:
-                        lineButton.text = 'You have reached the end of your part of the script.\nStart again from beginning, or practice last scene again?'
-                        self.charLineNum = -3
-                    lineButton.disabled = False
+                    self.nextScene(manager)
+#                     self.lineNum = 0
+#                     if not (self.currentScene == self.scenesList[-1]):
+#                         print(self.scenesList[-1])
+#                         indexOfCurrent = self.scenesList.index(self.currentScene)
+#                         nextScene = self.scenesList[indexOfCurrent + 1]
+#                         rehearseContainer = manager.current_screen.ids.rehearseContainer
+#                         buttonContainer = manager.current_screen.ids.buttonContainer
+#                         rehearseContainer.remove_widget(buttonContainer)
+#                         nextSceneContainer = NextSceneLayout(id='nextSceneLayout') 
+# 
+#                         def changeScreen(nsc):
+#                             print(nsc.ids)
+#                             nsc.clear_widgets()
+#                             rehearseContainer.add_widget(buttonContainer)
+# 
+#                         nextSceneButton = nextSceneContainer.ids.nextSceneButton
+#                         nextSceneButton.bind(on_release=lambda x:self.setActScene(manager, nextScene))
+#                         nextSceneButton.bind(on_release=lambda x:changeScreen(nextSceneContainer))
+#                         
+#                         repeatSceneButton = nextSceneContainer.ids.repeatSceneButton
+#                         repeatSceneButton.bind(on_release=lambda x:self.setActScene(manager, self.currentScene))
+#                         repeatSceneButton.bind(on_release=lambda x:changeScreen(nextSceneContainer))
+#                         
+#                         rehearseContainer.add_widget(nextSceneContainer)
+#                         print(manager.current_screen.ids)
+#                     else:
+#                         #TODO: Make this function.
+#                         lineButton.text = 'You have reached the end of your part of the script.\nStart again from beginning, or practice last scene again?'
+#                         self.charLineNum = -3
+#                         
+                lineButton.disabled = False
             
             else:
                 if self.lineNum < len(self.lineList):
                     if self.charList[self.lineNum] == self.userChar:
                         promptButton.disabled = False
-                        #lineButton.text = 'Your Line!'
                         self.charLineNum = self.lineNum
                         self.lineNum += 1
                     else:
@@ -275,21 +348,38 @@ class TestApp(App):
                         lineButton.text = 'Next Line!'
                         Clock.schedule_once(lambda dt: self.speakLine(manager), 0.2)
                 else:
-                    self.lineNum = 0
-                    lineButton.text = 'You have reached the end of this script.\nClick here to start again'
-                    self.charLineNum = -3
+                    self.nextScene(manager)
+#                     self.lineNum = 0
+#                     lineButton.text = 'You have reached the end of this script.\nClick here to start again'
+#                     self.charLineNum = -3
                 lineButton.disabled = False
 
-    def setActScene(self, screens, selection):
+    # Function called on_click of the character selection dropdown menu
+    def setUserChar(self, manager, selection):
+
+        charButton = manager.screens[1].ids.charButton
+        lineButton = manager.screens[1].ids.lineButton
+
+        setattr(charButton, 'text', selection)
         
-        actSceneButton = screens.current_screen.ids.actSceneButton
-        lineButton = screens.current_screen.ids.lineButton
+        # I DON'T WANT TO DO THIS, I THINK:
+        # Reset so that rehearsal will start from the first line
+        # self.jumpToSectionStart(manager)
+        # lineButton.text = 'Start Rehearsing!'
+
+        if selection == '':
+            setattr(charButton, 'text', 'Character')
+        self.userChar = selection
+
+    def setActScene(self, manager, selection):
+
+        actSceneButton = manager.current_screen.ids.actSceneButton
+        lineButton = manager.current_screen.ids.lineButton
         
         setattr(actSceneButton, 'text', selection)
 
         # Reset so that rehearsal will start from the first line
-        self.lineNum = 0
-        self.charLineNum = -1
+        self.jumpToSectionStart(manager)
         lineButton.text = 'Start Rehearsing!'
 
         if selection == '':
@@ -302,10 +392,10 @@ class TestApp(App):
 
     # Function to build character selection menu for Rehearse Screen
     # Clears current rehearsal data and populates dropdown.  
-    def charSelect(self, screens):
+    def charSelect(self, manager):
         
-        charMenu = screens.current_screen.ids.charMenu
-        actSceneMenu = screens.current_screen.ids.actSceneMenu
+        charMenu = manager.current_screen.ids.charMenu
+        actSceneMenu = manager.current_screen.ids.actSceneMenu
 
         charMenu.clear_widgets()
         actSceneMenu.clear_widgets()
@@ -327,76 +417,52 @@ class TestApp(App):
 
             actSceneMenu.add_widget(btn)
         
-        charButton = screens.current_screen.ids.charButton 
-        actSceneButton = screens.current_screen.ids.actSceneButton
-        lineButton = screens.current_screen.ids.lineButton
+        charButton = manager.current_screen.ids.charButton 
+        actSceneButton = manager.current_screen.ids.actSceneButton
+        lineButton = manager.current_screen.ids.lineButton
 
         setattr(charButton, 'text', 'Character')
 
         setattr(actSceneButton, 'text', 'Act #, Scene #')
 
-        # Function called on_click of the character selection dropdown menu
-        def setUserChar(selection):
-            setattr(charButton, 'text', selection)
-            
-            # Reset so that rehearsal will start from the first line
-            self.lineNum = 0
-            self.charLineNum = -1
-            lineButton.text = 'Start Rehearsing!'
+        charButton.bind(on_press=lambda x:self.setUserChar(manager, ''))
+        actSceneButton.bind(on_press=lambda x:self.setActScene(manager, ''))
 
-            if selection == '':
-                setattr(charButton, 'text', 'Character')
-            self.userChar = selection
-
-        charButton.bind(on_press=lambda x:setUserChar(''))
-        actSceneButton.bind(on_press=lambda x:self.setActScene(screens, ''))
-
-        charMenu.bind(on_select=lambda instance, x:setUserChar(x))
-        actSceneMenu.bind(on_select=lambda instance, x:self.setActScene(screens, x))
+        charMenu.bind(on_select=lambda instance, x:self.setUserChar(manager, x))
+        actSceneMenu.bind(on_select=lambda instance, x:self.setActScene(manager, x))
 
     # Returns user to previous screen from Settings Screen
     def returnToPrevScreen(self, manager):
         cuesModeSwitch = manager.current_screen.ids.cuesModeSwitch
+        cutModeSwitch = manager.current_screen.ids.cutModeSwitch
         self.cuesMode = cuesModeSwitch.active
+        self.cutMode = cutModeSwitch.active
         manager.current = self.prevScreen
+        self.setUserChar(manager, self.userChar)
 
     # Initial function.  Called when the app first loads.
     # Sets up Screen Manager and menu of play options.
     def build(self):
 
-        sm = ScreenManager()
-        sm.add_widget(MenuScreen(name='menu'))
-        sm.add_widget(RehearseScreen(name='rehearse'))
-        sm.add_widget(SettingsScreen(name='settings'))
-        sm.transition = NoTransition(duration=0)
+        manager= ScreenManager()
+        manager.add_widget(MenuScreen(name='menu'))
+        manager.add_widget(RehearseScreen(name='rehearse'))
+        manager.add_widget(SettingsScreen(name='settings'))
+        manager.transition = NoTransition(duration=0)
 
-        sm.screens[2].ids.settingsButton.bind(on_release=lambda x: self.returnToPrevScreen(sm))
+        manager.screens[2].ids.settingsButton.bind(on_release=lambda x: self.returnToPrevScreen(manager))
 
         # Called on_click of a play option by the user.
         # Loads the lines and character list of the selected play and
         # switches to the Rehearse Screen.
         def selectPlay(selection):
 
-            sm.current = 'rehearse'
+            manager.current = 'rehearse'
             result =  "".join(selection.split(" ")).lower()
             self.playName = result + ".txt"
 
             fileObject = open(self.playName)
             
-            # for line in fileObject: 
-                
-            #     #Load to dict and keep line count for each character.  
-            #     #lineArray = line.split(":") 
-
-            #     if line == '':
-            #         currentString = ''
-            #     elif (not ' ' in line) and (not 'ACT' in line) and (not 'SCENE' in line):
-            #         self.charList.append(line[:-1])
-            #         print(self.charList)
-            #     else:
-            #         currentString = currentString + ' ' + line
-            #         print(currentString)
-
             currentString = ''
             currentSceneLines = []
             currentSceneChars = []
@@ -405,17 +471,11 @@ class TestApp(App):
 
             for line in fileObject: 
                 
-                #Load to dict and keep line count for each character.  
-                #lineArray = line.split(":") 
-                #print('LINE: ' + line)
-
                 if not re.search('[a-zA-Z]', line):
                     if not currentString == '':
-                        #print(currentString)
                         self.lineList.append(currentString)
                         currentSceneLines.append(currentString)
                     prevLineChar = False
-                    #print(lineList)
                     currentString = ''
                 elif ('ACT' in line) or ('PROLOGUE' in line):
                     currentAct = line
@@ -435,12 +495,9 @@ class TestApp(App):
                 elif (not 'ACT' in line) and (not 'SCENE' in line) and ('.' in line) and (not re.search('[a-z]',line)):
                     self.charList.append(line[:-1])
                     currentSceneChars.append(line[:-1])
-                    #print(charList)
                     prevLineChar = True
-                    #print('Character = ' + line[:-1]) 
                 elif prevLineChar:
                     currentString = currentString + ' ' + line
-                    #print(currentString)
                 else:
                     pass
             
@@ -449,29 +506,20 @@ class TestApp(App):
             self.fullLineList = self.lineList
             self.fullCharList = self.charList
 
-            # print (self.sceneLinesList)
-            # print (self.sceneCharsList)
-            print (self.scenesList)
-
             for i in range(len(self.scenesList)):
                 self.sceneLinesDict[self.scenesList[i]] = self.sceneLinesList[i]
                 self.sceneCharsDict[self.scenesList[i]] = self.sceneCharsList[i]
 
-            print(self.sceneCharsDict)
-            print(self.sceneLinesDict)
-            print("Current Screen for reference: " + sm.current)
-            #sm.current_screen.bind(on_enter=lambda x:self.charSelect(sm))
+            self.charSelect(manager)
 
-            scriptMenuButton = sm.current_screen.ids.scriptMenuButton
-            scriptMenuButton.bind(on_release=lambda x:self.resetData(sm))
-            print(scriptMenuButton.text)
+            scriptMenuButton = manager.current_screen.ids.scriptMenuButton
+            scriptMenuButton.bind(on_release=lambda x:self.resetScript(manager))
 
-            lineButton = sm.current_screen.ids.lineButton
-            #lineButtonLayout = sm.current_screen.ids.lineButtonLayout
+            lineButton = manager.current_screen.ids.lineButton
             lineButton.text = 'Start Rehearsing!'
             self.prevScreen = 'rehearse'
         
-        playMenu = sm.current_screen.ids.playMenu
+        playMenu = manager.current_screen.ids.playMenu
         playMenu.bind(minimum_height=playMenu.setter('height'))
         for i in range(len(PLAY_LIST)):
             btn = Button(text=PLAY_LIST[i], font_size=30, size_hint=(1, None))
@@ -480,32 +528,26 @@ class TestApp(App):
             btn.bind(on_release=lambda x:selectPlay(x.text))
             playMenu.add_widget(btn)
 
-        rehearseScreen = sm.screens[1]
+        rehearseScreen = manager.screens[1]
         lineButton = rehearseScreen.ids.lineButton
         lineButton.height = lineButton.minimum_height
-        print('Height should be: ' + str(lineButton.minimum_height))
-        print('Height: ' + str(lineButton.height))
-        #lineButtonLayout = rehearseScreen.ids.lineButtonLayout
-        #lineButtonLayout.bind(minimum_height=lineButtonLayout.setter('height'))
-        lineButton.bind(on_release=lambda x:self.nextLine(sm))  
+        lineButton.bind(on_release=lambda x:self.nextLine(manager))  
         promptButton = rehearseScreen.ids.promptButton
-        promptButton.bind(on_release=lambda x:self.promptMe(sm))
-
-        rehearseScreen.bind(on_enter=lambda x:self.charSelect(sm))
+        promptButton.bind(on_release=lambda x:self.promptMe(manager))
        
         # Sets up the Settings Screen
         def openSettings():
 
-            self.prevScreen = sm.current
-            sm.current = 'settings'
+            self.prevScreen = manager.current
+            manager.current = 'settings'
 
-        menuSettingsButton = sm.current_screen.ids.settingsButton
+        menuSettingsButton = manager.current_screen.ids.settingsButton
         rehearseSettingsButton = rehearseScreen.ids.settingsButton
 
         menuSettingsButton.bind(on_release=lambda x:openSettings())
         rehearseSettingsButton.bind(on_release=lambda x:openSettings())
 
-        return sm
+        return manager
     
 
 if __name__ == '__main__':
