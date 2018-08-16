@@ -372,7 +372,7 @@ class TestApp(App):
         self.userChar = selection
 
     def setActScene(self, manager, selection):
-
+            
         actSceneButton = manager.current_screen.ids.actSceneButton
         lineButton = manager.current_screen.ids.lineButton
         
@@ -389,6 +389,11 @@ class TestApp(App):
             self.lineList = self.sceneLinesDict[selection]
             self.charList = self.sceneCharsDict[selection]
             self.currentScene = selection
+            while self.cuesMode and (self.userChar not in self.charList) and not (self.currentScene == self.scenesList[-1]):
+                indexOfCurrent = self.scenesList.index(self.currentScene)
+                print(self.scenesList[indexOfCurrent])
+                self.setActScene(manager, self.scenesList[indexOfCurrent + 1])
+                
 
     # Function to build character selection menu for Rehearse Screen
     # Clears current rehearsal data and populates dropdown.  
