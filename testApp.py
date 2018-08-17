@@ -111,6 +111,9 @@ class TestApp(App):
     # cutMode indicates whether the app should speak entire lines (when False)
     # or skip to the last few phrases of each line for faster rehearsal.
     cutMode = BooleanProperty(False)
+
+    volume = NumericProperty()
+    rate = NumericProperty()
     
     # Resets indexes to start of current section
     def jumpToSectionStart(self, manager):
@@ -161,6 +164,8 @@ class TestApp(App):
  
     # Speaks the line of the script which the current lineNum indicates
     def speakLine(self, manager):
+
+        os.system("osascript -e 'set Volume " + str(self.volume) + "'")
         
         lineButton = manager.current_screen.ids.lineButton
         promptMe = manager.current_screen.ids.promptButton
@@ -178,7 +183,7 @@ class TestApp(App):
             else:
                 lineForSpeak = lineForSpeak.replace("\n", " ")
             print(lineForSpeak)
-            os.system("say -v Alex" + lineForSpeak) 
+            os.system("say -v Alex" + lineForSpeak + "-r " + str(self.rate)) 
                
         self.lineNum += 1
         
@@ -305,36 +310,7 @@ class TestApp(App):
                                 break
                 else:
                     self.nextScene(manager)
-#                     self.lineNum = 0
-#                     if not (self.currentScene == self.scenesList[-1]):
-#                         print(self.scenesList[-1])
-#                         indexOfCurrent = self.scenesList.index(self.currentScene)
-#                         nextScene = self.scenesList[indexOfCurrent + 1]
-#                         rehearseContainer = manager.current_screen.ids.rehearseContainer
-#                         buttonContainer = manager.current_screen.ids.buttonContainer
-#                         rehearseContainer.remove_widget(buttonContainer)
-#                         nextSceneContainer = NextSceneLayout(id='nextSceneLayout') 
-# 
-#                         def changeScreen(nsc):
-#                             print(nsc.ids)
-#                             nsc.clear_widgets()
-#                             rehearseContainer.add_widget(buttonContainer)
-# 
-#                         nextSceneButton = nextSceneContainer.ids.nextSceneButton
-#                         nextSceneButton.bind(on_release=lambda x:self.setActScene(manager, nextScene))
-#                         nextSceneButton.bind(on_release=lambda x:changeScreen(nextSceneContainer))
-#                         
-#                         repeatSceneButton = nextSceneContainer.ids.repeatSceneButton
-#                         repeatSceneButton.bind(on_release=lambda x:self.setActScene(manager, self.currentScene))
-#                         repeatSceneButton.bind(on_release=lambda x:changeScreen(nextSceneContainer))
-#                         
-#                         rehearseContainer.add_widget(nextSceneContainer)
-#                         print(manager.current_screen.ids)
-#                     else:
-#                         #TODO: Make this function.
-#                         lineButton.text = 'You have reached the end of your part of the script.\nStart again from beginning, or practice last scene again?'
-#                         self.charLineNum = -3
-#                         
+             
                 lineButton.disabled = False
             
             else:
@@ -349,9 +325,6 @@ class TestApp(App):
                         Clock.schedule_once(lambda dt: self.speakLine(manager), 0.2)
                 else:
                     self.nextScene(manager)
-#                     self.lineNum = 0
-#                     lineButton.text = 'You have reached the end of this script.\nClick here to start again'
-#                     self.charLineNum = -3
                 lineButton.disabled = False
 
     # Function called on_click of the character selection dropdown menu
@@ -440,8 +413,12 @@ class TestApp(App):
     def returnToPrevScreen(self, manager):
         cuesModeSwitch = manager.current_screen.ids.cuesModeSwitch
         cutModeSwitch = manager.current_screen.ids.cutModeSwitch
+        volumeSlider = manager.current_screen.ids.volumeSlider
+        speedSlider = manager.current_screen.ids.speedSlider
         self.cuesMode = cuesModeSwitch.active
         self.cutMode = cutModeSwitch.active
+        self.volume = volumeSlider.value 
+        self.rate = speedSlider.value
         manager.current = self.prevScreen
         self.setUserChar(manager, self.userChar)
 
