@@ -62,6 +62,11 @@ class RehearseScreen(Screen):
 class SettingsScreen(Screen):
     pass
 
+class InfoScreen(Screen):
+    pass
+
+class RecordScreen(Screen):
+    pass
 
 # Contains all functions of the app
 class TestApp(App):
@@ -114,6 +119,10 @@ class TestApp(App):
 
     volume = NumericProperty()
     rate = NumericProperty()
+    
+    # Switch to selected screen
+    def switchToScreen(self, manager, screen):
+        manager.current = screen
     
     # Resets indexes to start of current section
     def jumpToSectionStart(self, manager):
@@ -362,7 +371,7 @@ class TestApp(App):
             self.lineList = self.sceneLinesDict[selection]
             self.charList = self.sceneCharsDict[selection]
             self.currentScene = selection
-            while self.cuesMode and (self.userChar not in self.charList) and not (self.currentScene == self.scenesList[-1]):
+            while self.cuesMode and (not self.userChar == '') and (self.userChar not in self.charList) and not (self.currentScene == self.scenesList[-1]):
                 indexOfCurrent = self.scenesList.index(self.currentScene)
                 print(self.scenesList[indexOfCurrent])
                 self.setActScene(manager, self.scenesList[indexOfCurrent + 1])
@@ -419,7 +428,7 @@ class TestApp(App):
         self.cutMode = cutModeSwitch.active
         self.volume = volumeSlider.value 
         self.rate = speedSlider.value
-        manager.current = self.prevScreen
+        self.switchToScreen(manager, self.prevScreen) 
         self.setUserChar(manager, self.userChar)
 
     # Initial function.  Called when the app first loads.
@@ -430,6 +439,8 @@ class TestApp(App):
         manager.add_widget(MenuScreen(name='menu'))
         manager.add_widget(RehearseScreen(name='rehearse'))
         manager.add_widget(SettingsScreen(name='settings'))
+        manager.add_widget(InfoScreen(name='info'))
+        manager.add_widget(RecordScreen(name='record'))
         manager.transition = NoTransition(duration=0)
 
         manager.screens[2].ids.settingsButton.bind(on_release=lambda x: self.returnToPrevScreen(manager))
@@ -439,7 +450,7 @@ class TestApp(App):
         # switches to the Rehearse Screen.
         def selectPlay(selection):
 
-            manager.current = 'rehearse'
+            self.switchToScreen(manager, 'rehearse') 
             result =  "".join(selection.split(" ")).lower()
             self.playName = result + ".txt"
 
@@ -511,6 +522,7 @@ class TestApp(App):
             playMenu.add_widget(btn)
 
         rehearseScreen = manager.screens[1]
+        recordScreen = manager.screens[4]
         lineButton = rehearseScreen.ids.lineButton
         lineButton.height = lineButton.minimum_height
         lineButton.bind(on_release=lambda x:self.nextLine(manager))  
@@ -521,13 +533,16 @@ class TestApp(App):
         def openSettings():
 
             self.prevScreen = manager.current
-            manager.current = 'settings'
-
+            self.switchToScreen(manager, 'settings') 
+            
         menuSettingsButton = manager.current_screen.ids.settingsButton
         rehearseSettingsButton = rehearseScreen.ids.settingsButton
 
         menuSettingsButton.bind(on_release=lambda x:openSettings())
         rehearseSettingsButton.bind(on_release=lambda x:openSettings())
+
+        recordButton = rehearseScreen.ids.recordButton
+        recordButton.bind(on_release=lambda x:self.switchToScreen(manager, 'record'))
 
         return manager
     

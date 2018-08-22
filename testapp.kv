@@ -93,23 +93,18 @@
                 id: buttonContainer
                 orientation: 'vertical'
                 size_hint: (None, None)
-                size: (Window.width, 0.8*Window.height)
+                size: (Window.width, 0.7*Window.height)
                 pos_hint: {'top': 0.8}
                 ScrollView:
                     id: lineButtonScroll
                     size_hint: (None, None)
-                    size: (Window.width, 0.7*Window.height)
-                    # FloatLayout:
-                    #     id: lineButtonLayout
-                    #     #cols: 1
-                    #     size_hint: (None, None)
-                    #     size: (Window.width, 0.7*Window.height)
+                    size: (Window.width, 0.6*Window.height)
                     Button:
                         id: lineButton
                         text: 'Start Rehearsing!'
                         size_hint: (None, None)
-                        minimum_height: 0.7*Window.height
-                        height: self.texture_size[1] + abs(0.7*Window.height - self.texture_size[1])
+                        minimum_height: 0.6*Window.height
+                        height: self.texture_size[1] + abs(0.6*Window.height - self.texture_size[1])
                         width: Window.width
                         #pos_hint: {'top': 1}
                 Button:
@@ -117,6 +112,152 @@
                     text: 'Prompt Me!' 
                     size_hint: (None, None)
                     size: (root.width, 0.1*root.height)
+	            BoxLayout:
+	                id: bottomMenu
+	                orientation: 'horizontal'
+	                size_hint: (None, None)
+	                size: (Window.width, 0.1*Window.height)
+	                pos_hint: {'top': 0.1}
+	                Button:
+	                    id: rehearseButton
+	                    text: 'Rehearse'
+	                    size_hint: (None, None)
+	                    size: (0.5*Window.width, 0.1*Window.height)
+	                Button:
+	                    id: recordButton
+	                    text: 'Record'
+	                    size_hint: (None, None)
+	                    size: (0.5*Window.width, 0.1*Window.height)    
+
+# 
+<RecordScreen>:
+    charMenu: charMenu.__self__
+    actSceneMenu: actSceneMenu.__self__
+    buttonContainer: buttonContainer.__self__
+    BoxLayout:
+        id: totalContainer
+        orientation: "vertical"
+
+        BoxLayout:
+            orientation: 'vertical'
+            BoxLayout:
+                orientation: 'horizontal'
+                Button:
+                    id: scriptMenuButton
+                    text: 'Script Menu'
+                    on_press: root.manager.current = "menu"
+                    height: 0.1*Window.height
+                Button:
+                    disabled: True
+                    text: 'L I N E !'
+                    height: 0.1*Window.height
+                Button:
+                    text: 'Settings'
+                    id: settingsButton
+                    height: 0.1*Window.height
+            BoxLayout:
+                orientation: 'horizontal'
+                Button:
+                    id: charButton
+                    on_release: charMenu.open(self)
+                    size_hint: (None, None)
+                    size: ((1/2)*Window.width, 0.05*Window.height)
+                    text: 'Character'
+                    DropDown:
+                        id: charMenu
+                        size_hint: (None, None) 
+                Button:
+                    id: actSceneButton
+                    on_release: actSceneMenu.open(self)
+                    size_hint: (None, None)
+                    size: ((1/2)*Window.width, 0.05*Window.height)
+                    text: 'Act #, Scene #' 
+                    background_color: [1, 0, 0, 1]
+                    DropDown:
+                        id: actSceneMenu
+                        size_hint: (None, None)
+
+        BoxLayout:
+            id: rehearseContainer
+            orientation: 'vertical'  
+            size_hint: (None, None)
+            size: (Window.width, 0.8*Window.height)      
+            BoxLayout:
+                id: buttonContainer
+                orientation: 'vertical'
+                size_hint: (None, None)
+                size: (Window.width, 0.7*Window.height)
+                pos_hint: {'top': 0.8}
+                ScrollView:
+                    id: lineButtonScroll
+                    size_hint: (None, None)
+                    size: (Window.width, 0.7*Window.height)
+                    pos_hint: {'top': 0.8}
+                    GridLayout:
+                        size_hint: (None, None)
+                        size: (Window.width, 0.7*Window.height)
+                        cols: 1
+                        pos_hint: {'top': 0.8}
+                        Button:
+                            id: lineSearch
+                            text: 'Search for Line'
+                            size_hint: (None, None)
+                            size: (Window.width, 0.15*Window.height)
+                        Button:
+                            id: characterLines
+                            text: 'Record All for Selected Character'
+                            size_hint: (None, None)
+                            size: (Window.width, 0.15*Window.height)
+                        Button:
+                            id: cueLines
+                            text: 'Record Cues for Selected Character'
+                            size_hint: (None, None)
+                            size: (Window.width, 0.15*Window.height)
+                        Button:
+                            id: cueLines
+                            text: 'Record All Lines For Scene'
+                            size_hint: (None, None)
+                            size: (Window.width, 0.15*Window.height)
+            BoxLayout:
+                id: bottomMenu
+                orientation: 'horizontal'
+                size_hint: (None, None)
+                size: (Window.width, 0.1*Window.height)
+                pos_hint: {'top': 0.1}
+                Button:
+                    id: rehearseButton
+                    text: 'Rehearse'
+                    size_hint: (None, None)
+                    size: (0.5*Window.width, 0.1*Window.height)
+                Button:
+                    id: recordButton
+                    text: 'Record'
+                    size_hint: (None, None)
+                    size: (0.5*Window.width, 0.1*Window.height)
+
+# Instructions and Information
+<InfoScreen>:
+    BoxLayout:
+        id: totalContainer
+        orientation: "vertical"
+        BoxLayout:
+            orientation: 'horizontal'
+            Button:
+                id: scriptMenuButton
+                text: 'Script Menu'
+                on_press: root.manager.current = "menu"
+                height: 0.1*Window.height
+            Button:
+                disabled: True
+                text: 'L I N E !'
+                height: 0.1*Window.height
+            Button:
+                text: 'Settings'
+                id: settingsButton
+                height: 0.1*Window.height
+        Label:
+            id: infoText
+            text: "The LINE! App is designed to provide a virtual partner \nto help theater students or anyone who needs to \npractice memorizing a dialogue. You can select \nfrom a menu of scripts, then rehearse, with the app \nusing text-to-speech to speak your cue lines.\nSimply select the play you want to rehearse, select the \ncharacter you're practicing and click through the script."            
 
 # Screen to adjust volume, speed, and set cues mode
 <SettingsScreen>:
